@@ -1,0 +1,66 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Tests", // Label for building the test executable
+            "type": "shell",
+            "command": "make", // Command to build run_tests (assuming default target builds tests or all)
+            // Or explicitly: "command": "make run_tests",
+            "group": {
+                "kind": "build",
+                "isDefault": true // Make this the default build task (Ctrl+Shift+B)
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Builds the test executable using Makefile"
+        },
+        {
+            "label": "Run Tests", // Label for running the tests
+            "type": "shell",
+            "command": "make test", // Command defined in your Makefile
+            "group": "test",
+            "dependsOn": ["Build Tests"], // Ensure tests are built before running
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": [], // Usually no problems to match for test runs
+            "detail": "Runs the test suite using 'make test'"
+        },
+         {
+            "label": "Build App", // Label for building the main executable
+            "type": "shell",
+            "command": "make main",
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "detail": "Builds the main application executable using 'make main'"
+        },
+        {
+            "label": "Run App", // Label for running the main application
+            "type": "shell",
+            "command": "./main", // Command to run the executable
+            "dependsOn": ["Build App"], // Ensure app is built first
+             "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true, // Focus the terminal when running
+                "panel": "dedicated", // Give it its own terminal panel
+                "showReuseMessage": false,
+                "clear": true // Clear terminal before running
+            },
+            "problemMatcher": [],
+            "detail": "Runs the main application './main'"
+        },
+        {
+            "label": "Clean", // Label for cleaning build artifacts
+            "type": "shell",
+            "command": "make clean",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Removes build artifacts using 'make clean'"
+        }
+    ]
+}
