@@ -1,27 +1,29 @@
 #include "SimpleSeaCreatureFactory.h"
-#include "InvertebrateCreature.h"
+#include "InvertebrateCreature.h" //need concrete types
 #include "SeaCreatureData.h"
-#include "VertebrateCreature.h" // Need concrete classes
-#include <iostream>             // For error messages (optional)
-#include <stdexcept>            // For exceptions
-#include <string>               // For comparing category
+#include "VertebrateCreature.h"   //need concrete types
+#include <iostream>               //cerr
+#include <stdexcept>              //runtime_error maybe
+#include <string>                 //string compare
 
+//implementation of the factory method
 std::unique_ptr<SeaCreature> SimpleSeaCreatureFactory::createSeaCreature(
-    const SeaCreatureData &details) const {
-  // Determine category (assuming it's set in details, or determine it here)
-  std::string category =
-      details.category; // Or determine based on species, etc.
+    const SeaCreatureData& details) const {
 
-  // Simple logic to create the correct type based on category
+  //figure out category from details struct
+  std::string category = details.category;
+
+  //make the right creature type based on category string
   if (category == "Vertebrate") {
     return std::make_unique<VertebrateCreature>(details);
   } else if (category == "Invertebrate") {
     return std::make_unique<InvertebrateCreature>(details);
   } else {
-    // Handle unknown category - throw exception or return nullptr
-    std::cerr << "Error: Unknown creature category '" << category
+    //unknown category? fail.
+    //Can either return nullptr or throw, throwing sounds better here
+    std::cerr << "ERROR: SimpleSeaCreatureFactory: Unknown creature category '" << category
               << "' for species '" << details.species << "'" << std::endl;
-    // Or throw std::runtime_error("Unknown creature category");
-    return nullptr;
+    //throw std::runtime_error("Unknown creature category");
+    return nullptr; //return null for now, less noisy
   }
 }

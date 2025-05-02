@@ -3,13 +3,14 @@
 
 #include "SeaChecker.h"
 
-// Forward declaration
+//fwd decl
 class SeaCreature;
 
+//checks rules for invertebrates (crabs, lobsters, etc)
 class InvertebrateChecker : public SeaChecker {
 public:
-  // Override the interface method
-  bool canKeep(const SeaCreature &creature) const override;
+  //checks rules for this specific creature
+  bool canKeep(const SeaCreature& creature) const override;
 };
 
-#endif // INVERTEBRATECHECKER_H
+#endif 

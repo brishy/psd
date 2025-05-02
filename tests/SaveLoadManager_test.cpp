@@ -1,96 +1,98 @@
-// tests/SaveLoadManager_test.cpp
+#include "SaveLoadManager.h" //class under test
 #include "Angler.h"
 #include "Bag.h"
-#include "SaveLoadManager.h" // Class under test (will create .cpp next)
-#include "VertebrateCreature.h"
+#include "VertebrateCreature.h" //need for creating test creature
 #include "gtest/gtest.h"
-#include <filesystem> // Optional: for directory creation/cleanup (C++17)
-#include <fstream>    // For checking if file exists, cleaning up
+#include <filesystem> //for file cleanup
+#include <fstream>    //remove()
 #include <string>
+#include <optional>   //optional<>
 
-// Test Fixture for setup/teardown (e.g., manage save files)
+//test fixture, manages save file setup/teardown
 class SaveLoadManagerTest : public ::testing::Test {
 protected:
   SaveLoadManager slm;
   std::string testAnglerId = "test_angler_save_load";
-  std::string testFilePath =
-      "./saves/" + testAnglerId + ".txt"; // Match SaveLoadManager format
+  std::string testFilePath = "./saves/" + testAnglerId + ".txt";
 
   void SetUp() override {
-    // Ensure save directory exists (create if needed)
-    // Requires #include <filesystem>
+    //ensure ./saves exists for test output
     try {
       std::filesystem::create_directory("./saves");
-    } catch (...) {
+    } catch (...) { //ignore if exists or error
     }
-    // Clean up any pre-existing save file for this test ID
+    //delete test save file before test run
     std::remove(testFilePath.c_str());
   }
 
   void TearDown() override {
-    // Clean up save file after test
+    //delete test save file after test run
     std::remove(testFilePath.c_str());
-    // Optional: remove directory if empty?
-    // try { std::filesystem::remove("./saves"); } catch(...) {}
+    //TODO: maybe remove ./saves dir after all tests? if empty?
   }
 };
 
+//check saving/loading with empty bag works
 TEST_F(SaveLoadManagerTest, SaveAndLoadEmptyAnglerBag) {
-  // Arrange: Create an angler with an empty bag
+  //arrange: angler w/ empty bag
   Angler originalAngler(testAnglerId);
-  ASSERT_EQ(originalAngler.getBag().creatureCount(), 0);
+  ASSERT_EQ(originalAngler.getBag().creatureCount(), 0u);
 
-  // Act 1: Save the angler
+  //act 1: save
   bool save_success = slm.save(originalAngler);
-  ASSERT_TRUE(save_success); // Assert that save reported success
+  ASSERT_TRUE(save_success); //check save ok
 
-  // Act 2: Load the angler
+  //act 2: load
   std::optional<Angler> loadedAnglerOpt = slm.load(testAnglerId);
 
-  // Assert: Check if loading succeeded and data matches
-  ASSERT_TRUE(
-      loadedAnglerOpt.has_value()); // Check that load returned an Angler
-  if (loadedAnglerOpt) {            // Proceed only if load succeeded
-    Angler &loadedAngler = loadedAnglerOpt.value();
+  //assert: check load ok & data matches
+  ASSERT_TRUE(loadedAnglerOpt.has_value()); //check optional has value
+  if (loadedAnglerOpt) { //only check details if load returned something
+    Angler& loadedAngler = loadedAnglerOpt.value();
     ASSERT_EQ(loadedAngler.getId(), originalAngler.getId());
-    ASSERT_EQ(loadedAngler.getBag().creatureCount(), 0); // Check bag is empty
+    //check loaded bag empty
+    ASSERT_EQ(loadedAngler.getBag().creatureCount(), 0u);
   }
 }
 
+//check saving/loading with one creature works
 TEST_F(SaveLoadManagerTest, SaveAndLoadAnglerWithOneCreature) {
-  // Arrange: Create an angler with one creature in the bag
+  //arrange: angler w/ 1 creature
   std::string creatureSpecies = "Snapper";
   float creatureSize = 35.5f;
   bool creatureHasEggs = false;
-  std::string creatureCategory = "Vertebrate"; // Important for reconstruction
+  std::string creatureCategory = "Vertebrate"; //needed for load reconstruction
 
-  Angler originalAngler(testAnglerId); // Use the ID from the fixture
-  originalAngler.getBag().addCreature(std::make_unique<VertebrateCreature>(
-      creatureSpecies, creatureSize, creatureHasEggs));
-  ASSERT_EQ(originalAngler.getBag().creatureCount(), 1); // Verify setup
+  Angler originalAngler(testAnglerId);
+  originalAngler.getBag().addCreature(
+      std::make_unique<VertebrateCreature>(creatureSpecies, creatureSize, creatureHasEggs));
+  //check arrange step ok
+  ASSERT_EQ(originalAngler.getBag().creatureCount(), 1u);
 
-  // Act 1: Save the angler
+  //act 1: save
   bool save_success = slm.save(originalAngler);
-  ASSERT_TRUE(save_success); // Current save might pass this if it returns true
+  ASSERT_TRUE(save_success);
 
-  // Act 2: Load the angler
+  //act 2: load
   std::optional<Angler> loadedAnglerOpt = slm.load(testAnglerId);
 
-  // Assert: Check loading success and data integrity
-  ASSERT_TRUE(loadedAnglerOpt.has_value()); // THIS WILL LIKELY FAIL FIRST
+  //assert: check load ok
+  ASSERT_TRUE(loadedAnglerOpt.has_value());
 
   if (loadedAnglerOpt) {
-    Angler &loadedAngler = loadedAnglerOpt.value();
+    Angler& loadedAngler = loadedAnglerOpt.value();
+    //check ID
     ASSERT_EQ(loadedAngler.getId(), originalAngler.getId());
 
-    // Check the bag contents
-    const Bag &loadedBag = loadedAngler.getBag();
-    ASSERT_EQ(loadedBag.creatureCount(), 1); // Check if one creature loaded
+    //check bag contents
+    const Bag& loadedBag = loadedAngler.getBag();
+    ASSERT_EQ(loadedBag.creatureCount(), 1u); //check bag has 1 creature
 
-    if (loadedBag.creatureCount() == 1) {
-      const SeaCreature *loadedCreature = loadedBag.getAllCreatures()[0].get();
-      ASSERT_NE(loadedCreature, nullptr); // Ensure creature pointer is valid
+    if (loadedBag.creatureCount() == 1u) { //use 1u for size_t compare
+      const SeaCreature* loadedCreature = loadedBag.getAllCreatures()[0].get();
+      ASSERT_NE(loadedCreature, nullptr); //check loaded ptr ok
       if (loadedCreature) {
+        //check creature details match
         ASSERT_EQ(loadedCreature->getSpecies(), creatureSpecies);
         ASSERT_FLOAT_EQ(loadedCreature->getSize(), creatureSize);
         ASSERT_EQ(loadedCreature->carriesEggs(), creatureHasEggs);
@@ -99,3 +101,4 @@ TEST_F(SaveLoadManagerTest, SaveAndLoadAnglerWithOneCreature) {
     }
   }
 }
+

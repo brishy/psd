@@ -1,18 +1,16 @@
 #ifndef SEACREATUREDATA_H
 #define SEACREATUREDATA_H
 
-#include <map> // For otherRelevantInfo, adjust if using a different type
+#include <map> //for misc info map
 #include <string>
 
-// Simple data structure to hold information about a sea creature catch.
-// Making members public for easy access, typical for a simple data struct.
+//simple struct for catch data passed around
 struct SeaCreatureData {
   std::string species;
-  float size = 0.0f;
+  float size = 0.0f; //init just in case
   bool hasEggs = false;
-  std::string
-      category; // e.g., "Vertebrate", "Invertebrate" (can be determined)
-  std::map<std::string, std::string> otherRelevantInfo; // Optional extra info
+  std::string category; //"V" or "I"
+  std::map<std::string, std::string> otherRelevantInfo; //unused extras map
 };
 
-#endif // SEACREATUREDATA_H
+#endif 

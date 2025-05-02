@@ -1,27 +1,28 @@
-// include/BagChecker.h
 #ifndef BAGCHECKER_H
 #define BAGCHECKER_H
 
-// Forward declarations
+//fwd declarations
 class Bag;
-class VertebrateChecker;   // <-- Add forward declaration
-class InvertebrateChecker; // <-- Add forward declaration
+class VertebrateChecker; //fwd decl
+class InvertebrateChecker; //fwd decl
 
+//checks aggregate bag limits, uses individual checkers first
 class BagChecker {
 private:
-  // Store references to the individual checkers
-  const VertebrateChecker &v_checker;
-  const InvertebrateChecker &i_checker;
+  //needs refs to individual checkers (passed in ctor)
+  const VertebrateChecker& v_checker;
+  const InvertebrateChecker& i_checker;
 
 public:
-  // Constructor takes references to the checkers
-  BagChecker(const VertebrateChecker &vc, const InvertebrateChecker &ic);
+  //ctor - takes checker refs
+  BagChecker(const VertebrateChecker& vc, const InvertebrateChecker& ic);
 
-  bool validate(const Bag &bag) const;
+  //main validation logic for the whole bag
+  bool validate(const Bag& bag) const;
 
-  // Disable copy/move as references make assignment tricky
-  BagChecker(const BagChecker &) = delete;
-  BagChecker &operator=(const BagChecker &) = delete;
+  //no copy/move (refs make this annoying)
+  BagChecker(const BagChecker&) = delete;
+  BagChecker& operator=(const BagChecker&) = delete;
 };
 
-#endif // BAGCHECKER_H
+#endif 

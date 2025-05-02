@@ -1,20 +1,17 @@
 #include "App.h"
-#include "InvertebrateChecker.h" // Needed for creating instances
+#include "InvertebrateChecker.h" 
 #include "SeaCreatureData.h"
-#include "SeaCreatureFactory.h" // Need full definitions for unique_ptr destructor
-#include "SeaPlusPlusEngine.h" // Need full definitions for unique_ptr destructor
-#include "VertebrateChecker.h" // Needed for creating instances
-// Include concrete factory implementation header when you create one
-// #include "ConcreteSeaCreatureFactory.h"
+#include "SeaCreatureFactory.h" 
+#include "SeaPlusPlusEngine.h" 
+#include "VertebrateChecker.h" 
+
 #include <iostream>
-#include <limits>    // Required for numeric_limits
-#include <stdexcept> // Required for runtime_error
+#include <limits>    
+#include <stdexcept> 
 #include <string>
 
-// --- Concrete Factory Implementation (Example) ---
-// Normally this would be in its own .h/.cpp file (e.g.,
-// ConcreteSeaCreatureFactory.h/cpp) Including it here just for demonstration
-// purposes.
+
+//Here i put here for convenience, normally need a factory for its own files.
 #include "InvertebrateCreature.h"
 #include "SeaCreature.h"
 #include "VertebrateCreature.h"
@@ -22,86 +19,77 @@
 class ConcreteSeaCreatureFactory : public SeaCreatureFactory {
 public:
   std::unique_ptr<SeaCreature>
-  createSeaCreature(const SeaCreatureData &details) const override {
+  createSeaCreature(const SeaCreatureData& details) const override {
     if (details.category == "Vertebrate") {
       return std::make_unique<VertebrateCreature>(details);
     } else if (details.category == "Invertebrate") {
       return std::make_unique<InvertebrateCreature>(details);
     }
-    // Handle error or unknown type
+    //unknown type? blow up.
     throw std::runtime_error("Unknown creature category for factory: " +
                              details.category);
-    // return nullptr; // Or return nullptr if preferred over exceptions
+    //or return nullptr instead of throwing? nah.
   }
 };
-// --- End of Concrete Factory Example ---
+//--- end Factory ---
 
-// --- Constructor ---
+//--- ctor ---
 App::App() {
   std::cout << "App: Initializing..." << std::endl;
-
-  // Create concrete checkers
+  //make checkers
   auto vChecker = std::make_unique<VertebrateChecker>();
   auto iChecker = std::make_unique<InvertebrateChecker>();
-
-  // Create the engine and give it ownership of the checkers
+  //make engine, give it checkers (moves ownership)
   engine = std::make_unique<SeaPlusPlusEngine>(std::move(vChecker),
                                                std::move(iChecker));
+  //make the factory
+  factory = std::make_unique<ConcreteSeaCreatureFactory>();
 
-  // Create a concrete factory
-  factory = std::make_unique<ConcreteSeaCreatureFactory>(); // Use your concrete
-                                                            // factory
-
-  // Optionally register the app with the engine if needed for callbacks
-  // engine->registerApp(this);
-
+  //optional: register app w/ engine (if needed for callbacks)
+  //engine->registerApp(this);
   std::cout << "App: Initialization Complete." << std::endl;
 }
 
-// --- Destructor ---
-// Needs to be defined here where concrete Engine/Factory types are known
+//--- dtor ---
+//needed bc unique_ptr to fwd declared types Engine/Factory
 App::~App() { std::cout << "App: Shutting down." << std::endl; }
 
-// --- runApplication Method (Facade Logic) ---
+//--- runApplication (Facade) ---
 void App::runApplication() {
   std::cout << "\n--- Welcome to Sea++ ---" << std::endl;
-
-  // Simple loop for demonstration
+  //main interaction loop
   while (true) {
     SeaCreatureData catchData = collectCatchDetails();
-
     if (catchData.species == "quit") {
-      break; // Exit loop
+      break; //leave loop
     }
 
-    // Let the engine process the catch
+    //send catch data to engine to figure it out
     bool keepResult = engine->processCatch(catchData);
+    displayResult(keepResult); //tell the user
 
-    displayResult(keepResult);
-
-    std::cout << "\nEnter another catch or type 'quit' for species."
-              << std::endl;
+    //loop again prompt is in displayResult kinda
+    std::cout << "\nEnter another catch or type 'quit' for species." << std::endl;
   }
 
   std::cout << "--- Exiting Sea++ ---" << std::endl;
 }
 
-// --- collectCatchDetails Method ---
+//--- collectCatchDetails ---
 SeaCreatureData App::collectCatchDetails() {
   SeaCreatureData data;
   std::string categoryInput;
 
   std::cout << "\nEnter catch details:" << std::endl;
 
-  // Get Species
+  //get species name
   std::cout << " Species (e.g., Snapper, Lobster, or 'quit'): ";
-  std::getline(std::cin >> std::ws,
-               data.species); // std::ws consumes leftover newline
+  std::getline(std::cin >> std::ws, data.species); //std::ws eats leading whitespace/newline
 
   if (data.species == "quit")
-    return data; // Early exit
+    return data; //bail out
 
-  // Get Category (simplified)
+  //get category (V/I) - simple loop validation
   while (categoryInput != "V" && categoryInput != "I") {
     std::cout << " Category (V for Vertebrate / I for Invertebrate): ";
     std::cin >> categoryInput;
@@ -113,34 +101,32 @@ SeaCreatureData App::collectCatchDetails() {
       std::cout << " Invalid category. Please enter V or I." << std::endl;
   }
 
-  // Get Size
+  //get size (float) - loop validation
   std::cout << " Size (e.g., 30.5): ";
   while (!(std::cin >> data.size)) {
     std::cout << " Invalid input. Please enter a number for size: ";
-    std::cin.clear(); // Clear error flags
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
-                    '\n'); // Discard bad input
+    std::cin.clear(); //clear cin errors
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //ignore rest of bad line
   }
 
-  // Get Eggs status
+  //carrying eggs? (y/n) - loop validation
   char eggsInput = ' ';
   while (eggsInput != 'y' && eggsInput != 'n') {
     std::cout << " Carrying eggs (y/n): ";
     std::cin >> eggsInput;
-    eggsInput = std::tolower(eggsInput);
+    eggsInput = std::tolower(eggsInput); //force lowercase
   }
   data.hasEggs = (eggsInput == 'y');
 
-  // Clear the rest of the input buffer before next loop iteration
+  //eat rest of line before next potential getline
   std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-  // TODO: Collect otherRelevantInfo if needed based on your design
   std::cout << "------------------------" << std::endl;
 
   return data;
 }
 
-// --- displayResult Method ---
+//--- displayResult ---
+//just prints the verdict, looks nice if it were to be written like this
 void App::displayResult(bool canKeep) {
   std::cout << "\n--- Result ---" << std::endl;
   if (canKeep) {

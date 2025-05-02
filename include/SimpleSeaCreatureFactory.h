@@ -1,18 +1,18 @@
 #ifndef SIMPLESEACREATUREFACTORY_H
 #define SIMPLESEACREATUREFACTORY_H
 
-#include "SeaCreatureFactory.h"
+#include "SeaCreatureFactory.h" //implementing sea creature interface
 
-// Forward declarations (already in SeaCreatureFactory.h, but good practice)
+//fwd decls
 struct SeaCreatureData;
 class SeaCreature;
 
-// A simple concrete factory implementing the SeaCreatureFactory interface
+//simple concrete factory impl
 class SimpleSeaCreatureFactory : public SeaCreatureFactory {
 public:
-  // Override the interface method
+  //create the actual creature object based on details
   std::unique_ptr<SeaCreature>
-  createSeaCreature(const SeaCreatureData &details) const override;
+  createSeaCreature(const SeaCreatureData& details) const override;
 };
 
-#endif // SIMPLESEACREATUREFACTORY_H
+#endif

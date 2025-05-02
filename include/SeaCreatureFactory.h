@@ -1,22 +1,22 @@
 #ifndef SEACREATUREFACTORY_H
 #define SEACREATUREFACTORY_H
 
-#include <memory> // For std::unique_ptr or std::shared_ptr
+#include <memory> //unique_ptr
 
-// Forward declarations
+//fwd declarations
 struct SeaCreatureData;
 class SeaCreature;
 
-// Interface (Abstract Class) for creating SeaCreature instances
+//factory interface for making creatures
 class SeaCreatureFactory {
 public:
-  virtual ~SeaCreatureFactory() = default; // Virtual destructor
+  //virtual dtor
+  virtual ~SeaCreatureFactory() = default;
 
-  // Pure virtual function to create a SeaCreature based on details.
-  // Returning a smart pointer (e.g., unique_ptr) is good practice for
-  // ownership.
+  //pure virtual - create creature based on details
+  //returns unique_ptr (manages ownership)
   virtual std::unique_ptr<SeaCreature>
-  createSeaCreature(const SeaCreatureData &details) const = 0;
+  createSeaCreature(const SeaCreatureData& details) const = 0;
 };
 
-#endif // SEACREATUREFACTORY_H
+#endif

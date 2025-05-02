@@ -1,223 +1,199 @@
-// src/SaveLoadManager.cpp
 #include "SaveLoadManager.h"
 #include "Angler.h"
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <optional>
-#include <sstream>
-#include <stdexcept> // For potential exceptions during parsing/creation
-#include <string>
-#include <vector> // Needed for parsing helper maybe
+#include "InvertebrateCreature.h" //needed for load
+#include "VertebrateCreature.h"   //needed for load
 
-// --- ADD THESE INCLUDES IF NOT ALREADY PRESENT ---
-#include "InvertebrateCreature.h"
-#include "VertebrateCreature.h"
+#include <filesystem> //fs::path, fs::exists, fs::create_directory
+#include <fstream>    //ofstream, ifstream
+#include <iostream>   //cout, cerr
+#include <optional>   //optional<>
+#include <sstream>    //stringstream for parsing
+#include <stdexcept>  //exceptions for stof
+#include <string>     //for string manipulation
+#include <vector>     //to use in parsing creature line
 
-// Constructor Implementation
+//ctor
 SaveLoadManager::SaveLoadManager() {
-  // Ensure the directory exists when the manager is created.
+  //make sure ./saves exists on startup
   ensureSaveDirectoryExists();
 }
 
-// Helper to ensure the save directory exists
+//helper - check/create ./saves dir
 bool SaveLoadManager::ensureSaveDirectoryExists() const {
-  // 'saveDirectory' is a private member variable defined in SaveLoadManager.h
   try {
     if (!std::filesystem::exists(saveDirectory)) {
-      // Use .string() or appropriate method if path object needs conversion for
-      // output
-      std::cout << "Creating save directory: " << saveDirectory.string()
-                << std::endl;
+      std::cout << "Creating save directory: " << saveDirectory.string() << std::endl;
       return std::filesystem::create_directory(saveDirectory);
     }
-    return true; // Already exists
-  } catch (const std::exception &e) {
-    std::cerr << "Error creating/checking save directory: " << e.what()
-              << std::endl;
+    return true; //dir exists
+  } catch (const std::exception& e) {
+    std::cerr << "Error creating/checking save directory: " << e.what() << std::endl;
     return false;
   }
 }
 
-// Helper to get the full file path for an angler ID
-std::filesystem::path
-SaveLoadManager::getFilePath(const std::string &anglerId) const {
-  // 'saveDirectory' is a private member variable defined in SaveLoadManager.h
-  // Simple format: ID.txt in the save directory
+//helper - get save file path for ID
+//format: ./saves/anglerId.txt
+std::filesystem::path SaveLoadManager::getFilePath(const std::string& anglerId) const {
   return saveDirectory / (anglerId + ".txt");
 }
 
-bool SaveLoadManager::save(const Angler &angler) {
+//save impl
+bool SaveLoadManager::save(const Angler& angler) {
+  //make sure dir exists (might be redundant if ctor works, but safe)
   if (!ensureSaveDirectoryExists()) {
-    std::cerr << "Error: Save directory cannot be accessed." << std::endl;
+    std::cerr << "Error: Save directory cannot be accessed in save()." << std::endl;
     return false;
   }
 
   std::filesystem::path filePath = getFilePath(angler.getId());
-  std::ofstream outputFile(filePath); // Open file for writing
+  std::ofstream outputFile(filePath); //open file
 
   if (!outputFile.is_open()) {
-    std::cerr << "Error: Could not open file for saving: " << filePath
-              << std::endl;
-    return false; // Could not open the file
+    std::cerr << "Error: Could not open file for saving: " << filePath.string() << std::endl;
+    return false; //fail if can't open
   }
 
-  // --- Write Angler ID ---
+  //write ID
   outputFile << "AnglerID:" << angler.getId() << std::endl;
-
-  // --- Write Bag Creatures ---
+  //write bag section
   outputFile << "BagCreatures:Start" << std::endl;
-  const Bag &bag = angler.getBag(); // Get the bag
-  for (const auto &creature_ptr :
-       bag.getAllCreatures()) { // Loop through creatures
-    if (creature_ptr) {         // Check if pointer is valid
-      // Write creature details on one line, comma-separated
-      // Format: Creature:<Category>,<Species>,<Size>,<HasEggs>
-      outputFile << "Creature:" << creature_ptr->getCategory()
-                 << "," // Vertebrate/Invertebrate
-                 << creature_ptr->getSpecies() << "," << creature_ptr->getSize()
-                 << ","
-                 << (creature_ptr->carriesEggs() ? "1"
-                                                 : "0") // Save bool as 1 or 0
+  const Bag& bag = angler.getBag();
+  for (const auto& creature_ptr : bag.getAllCreatures()) {
+    if (creature_ptr) { //skip nullptrs
+      //write creature line
+      //format: Creature:Cat,Spec,Size,Eggs(1/0)
+      outputFile << "Creature:"
+                 << creature_ptr->getCategory() << ","
+                 << creature_ptr->getSpecies() << ","
+                 << creature_ptr->getSize() << ","
+                 << (creature_ptr->carriesEggs() ? "1" : "0")
                  << std::endl;
     }
   }
   outputFile << "BagCreatures:End" << std::endl;
 
-  // --- Check for Write Errors ---
+  //check stream errors before closing
   if (outputFile.fail()) {
-    std::cerr << "Error: Failed to write data to file: " << filePath
-              << std::endl;
-    outputFile.close(); // Attempt to close before returning
+    std::cerr << "Error: Failed to write data to file: " << filePath.string() << std::endl;
+    outputFile.close();
     return false;
   }
 
-  outputFile.close(); // Close the file explicitly
+  //close file
+  outputFile.close();
 
-  // Check if the file was closed successfully (optional, but good practice)
+  //double check close worked
   if (outputFile.fail() && !outputFile.eof()) {
-    std::cerr << "Error: Failed to close file properly after writing: "
-              << filePath << std::endl;
+    std::cerr << "Error: Failed to close file properly after writing: " << filePath.string() << std::endl;
     return false;
   }
 
-  std::cout << "SaveLoadManager::save completed successfully for "
-            << angler.getId() << std::endl;
-  return true; // Report success
+  return true;
 }
 
-std::optional<Angler> SaveLoadManager::load(const std::string &anglerId) {
+//load impl
+std::optional<Angler> SaveLoadManager::load(const std::string& anglerId) {
   std::filesystem::path filePath = getFilePath(anglerId);
 
-  if (!std::filesystem::exists(filePath)) { /* ... error handling ... */
+  if (!std::filesystem::exists(filePath)) {
+    //std::cerr << "Load Info: Save file not found: " << filePath.string() << std::endl; //normal if no save exists
     return std::nullopt;
   }
 
   std::ifstream inputFile(filePath);
-  if (!inputFile.is_open()) { /* ... error handling ... */
+  if (!inputFile.is_open()) {
+    std::cerr << "Load Error: Could not open file for loading: " << filePath.string() << std::endl;
     return std::nullopt;
   }
 
   std::string line;
   std::string loadedAnglerId;
   bool readingBag = false;
-  Angler loadedAngler(""); // Create temporary Angler - ID will be set later
+  Angler loadedAngler(""); //temp angler obj, ID set later
 
-  // --- Read and Parse File ---
-  int lineNumber = 0; // For error messages
+  //read the file line by line
+  int lineNumber = 0;
   while (std::getline(inputFile, line)) {
     lineNumber++;
     if (line.rfind("AnglerID:", 0) == 0) {
       loadedAnglerId = line.substr(9);
-      // Re-create angler here once ID is known (or set ID later)
-      loadedAngler = Angler(loadedAnglerId); // Re-assign now we have the ID
+      loadedAngler = Angler(loadedAnglerId); //re-make angler now we have ID
     } else if (line == "BagCreatures:Start") {
       readingBag = true;
     } else if (line == "BagCreatures:End") {
       readingBag = false;
     } else if (readingBag && line.rfind("Creature:", 0) == 0) {
-      // --- Parse Creature Line ---
-      std::string data = line.substr(9); // Get data after "Creature:"
+      //parse the Creature: line
+      std::string data = line.substr(9);
       std::stringstream ss(data);
       std::string segment;
       std::vector<std::string> parts;
-
-      while (std::getline(ss, segment, ',')) { // Split by comma
+      while (std::getline(ss, segment, ',')) { //split by comma
         parts.push_back(segment);
       }
 
+      //expecting 4 parts
       if (parts.size() != 4) {
-        std::cerr << "Load Error: Malformed creature data on line "
-                  << lineNumber << " in " << filePath.string() << std::endl;
-        continue; // Skip this creature line
+        std::cerr << "Load WARN: Skipping malformed creature line " << lineNumber << " in " << filePath.string() << std::endl;
+        continue; //skip bad line
       }
 
-      // Extract parts
       std::string category = parts[0];
       std::string species = parts[1];
       float size = 0.0f;
       bool hasEggs = false;
 
-      // Safely convert size (handle potential errors)
+      //parse size (stof)
       try {
         size = std::stof(parts[2]);
-      } catch (const std::invalid_argument &ia) {
-        std::cerr << "Load Error: Invalid size format '" << parts[2]
-                  << "' on line " << lineNumber << std::endl;
-        continue;
-      } catch (const std::out_of_range &oor) {
-        std::cerr << "Load Error: Size out of range '" << parts[2]
-                  << "' on line " << lineNumber << std::endl;
-        continue;
+      } catch (...) { //lazy catch-all, good enough?
+        std::cerr << "Load WARN: Bad size '" << parts[2] << "' on line " << lineNumber << ". Skipping creature." << std::endl;
+        continue; //skip if conversion fails
       }
 
-      // Safely convert hasEggs (expecting "1" or "0")
+      //parse eggs (1/0)
       if (parts[3] == "1") {
         hasEggs = true;
-      } else if (parts[3] == "0") {
-        hasEggs = false;
-      } else {
-        std::cerr << "Load Error: Invalid egg flag '" << parts[3]
-                  << "' on line " << lineNumber << std::endl;
-        continue; // Skip if invalid flag
+      } else if (parts[3] != "0") {
+        std::cerr << "Load WARN: Weird egg flag '" << parts[3] << "' on line " << lineNumber << ". Assuming false." << std::endl;
+        //fall through, hasEggs is already false
       }
 
-      // --- Create and Add Creature ---
+      //recreate creature obj from parts
       try {
         std::unique_ptr<SeaCreature> creature;
         if (category == "Vertebrate") {
-          creature =
-              std::make_unique<VertebrateCreature>(species, size, hasEggs);
+          creature = std::make_unique<VertebrateCreature>(species, size, hasEggs);
         } else if (category == "Invertebrate") {
-          creature =
-              std::make_unique<InvertebrateCreature>(species, size, hasEggs);
+          creature = std::make_unique<InvertebrateCreature>(species, size, hasEggs);
         } else {
-          std::cerr << "Load Warning: Unknown creature category '" << category
-                    << "' on line " << lineNumber << ". Skipping." << std::endl;
+          std::cerr << "Load WARN: Unknown creature category '" << category << "' on line " << lineNumber << ". Skipping." << std::endl;
         }
 
         if (creature) {
+          //need non-const access to bag here
           loadedAngler.getBag().addCreature(std::move(creature));
         }
-      } catch (const std::exception &e) {
-        std::cerr << "Load Error: Could not create creature from line "
-                  << lineNumber << ": " << e.what() << std::endl;
-        // Decide whether to continue or fail loading entirely
+      } catch (const std::exception& e) {
+        std::cerr << "Load Error: Could not create creature from line " << lineNumber << ": " << e.what() << std::endl;
       }
-    }
-  } // End while getline
+    } // end parsing creature line
+  } //end while getline
 
   inputFile.close();
 
-  // --- Final Validation ---
-  if (loadedAnglerId.empty()) { /* ... error handling ... */
+  //final checks after reading
+  if (loadedAnglerId.empty()) {
+    std::cerr << "Load Error: AnglerID not found in file: " << filePath.string() << std::endl;
     return std::nullopt;
   }
-  if (loadedAnglerId != anglerId) { /* ... error handling ... */
+  if (loadedAnglerId != anglerId) {
+    //weird id mismatch, should fail.
+    std::cerr << "Load Error: AnglerID mismatch in file. Expected '" << anglerId
+              << "', found '" << loadedAnglerId << "' in " << filePath.string() << std::endl;
     return std::nullopt;
   }
 
-  std::cout << "SaveLoadManager::load completed successfully for " << anglerId
-            << std::endl;
-  return loadedAngler; // Return the loaded angler (potentially with creatures)
+  return loadedAngler; //return loaded angler
 }

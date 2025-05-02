@@ -1,23 +1,21 @@
-// src/main.cpp
-
-#include "App.h" // Include the Facade class header
-#include <iostream>
+#include "App.h" //facade
+#include <iostream> //cerr, cout
 
 int main() {
   try {
-    // Create the application object
+    //making the app
     App seaApp;
-
-    // Start the application's main loop/process
+    //running it
     seaApp.runApplication();
-
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
+    //catch for exceptions
     std::cerr << "An unexpected error occurred: " << e.what() << std::endl;
-    return 1; // Indicate error
+    return 1; //error 
   } catch (...) {
+    //catch anything else
     std::cerr << "An unknown error occurred." << std::endl;
-    return 1; // Indicate error
+    return 1; //error
   }
 
-  return 0; // Indicate success
+  return 0; //success
 }

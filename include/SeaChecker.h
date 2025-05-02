@@ -1,18 +1,17 @@
 #ifndef SEACHECKER_H
 #define SEACHECKER_H
 
-// Forward declaration can work if SeaCreature is only used via
-// pointer/reference
+//fwd decl
 class SeaCreature;
-// Or include if needed directly: #include "SeaCreature.h"
 
-// Interface (Abstract Class) for checking sea creatures against regulations
+//checker interface (base class)
 class SeaChecker {
 public:
-  virtual ~SeaChecker() = default; // Virtual destructor for interface
+  //virtual dtor for base class
+  virtual ~SeaChecker() = default;
 
-  // Pure virtual function to check if a creature can be kept
-  virtual bool canKeep(const SeaCreature &creature) const = 0;
+  //pure virtual func - subclasses must implement canKeep
+  virtual bool canKeep(const SeaCreature& creature) const = 0;
 };
 
-#endif // SEACHECKER_H
+#endif 

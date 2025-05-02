@@ -1,170 +1,122 @@
 #include "InvertebrateChecker.h"
-#include "SeaCreature.h" // Include the full definition now
-#include <algorithm>     // For std::tolower
-#include <iostream>
+#include "SeaCreature.h" //need full def
+#include <algorithm>     //std::equal, std::tolower, std::transform
+#include <iostream>      //cout/cerr
 #include <string>
-#include <vector> // For std::vector
+#include <vector>        //vector for egg check list
 
-// --- FIX: Wrap helper function in anonymous namespace ---
-namespace { // Anonymous namespace for internal linkage
-bool iequals(const std::string &a, const std::string &b) {
-  return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](char a, char b) {
-    return std::tolower(a) == std::tolower(b);
-  });
+//case-insensitive string compare helper
+namespace { //anon namespace for helper
+bool iequals(const std::string& a, const std::string& b) {
+  return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+                    [](char a_char, char b_char) {
+                      return std::tolower(a_char) == std::tolower(b_char);
+                    });
 }
-} // end anonymous namespace
-// --- End of FIX ---
+} //namespace
 
-bool InvertebrateChecker::canKeep(const SeaCreature &creature) const {
-  std::cout << "InvertebrateChecker: Applying NSW DPI rules to species: "
-            << creature.getSpecies() << std::endl;
+//main checking logic for invertebrates
+bool InvertebrateChecker::canKeep(const SeaCreature& creature) const {
 
-  std::string species = creature.getSpecies();
-  float size =
-      creature
-          .getSize(); // Assumes size is carapace width/length as appropriate
+  const std::string& species = creature.getSpecies();
+  float size = creature.getSize(); //size = carapace width/length probably
   bool hasEggs = creature.carriesEggs();
 
-  // General Rule: Check for eggs first for applicable species
-  // List of species where egg check applies explicitly mentioned (+) in the PDF
-  std::vector<std::string> egg_check_species = {"lobster", "crab", "bug",
-                                                "crayfish"};
+  //checking eggs first if applicable
+  //species that need egg check (based on '+' in rules)
+  std::vector<std::string> egg_check_species = {"lobster", "crab", "bug", "crayfish"};
   bool check_eggs = false;
-  for (const auto &suffix : egg_check_species) {
-    // Simple check if species name contains the keyword (case-insensitive)
-    std::string lower_species = species;
-    std::transform(lower_species.begin(), lower_species.end(),
-                   lower_species.begin(), ::tolower);
+  std::string lower_species = species;
+  std::transform(lower_species.begin(), lower_species.end(), lower_species.begin(), ::tolower);
+
+  for (const auto& suffix : egg_check_species) {
+    //simple check if species name contains keyword
     if (lower_species.find(suffix) != std::string::npos) {
       check_eggs = true;
       break;
     }
   }
 
+  //carrying eggs? must release.
   if (check_eggs && hasEggs) {
-    std::cout << " -> Creature is carrying eggs and must be released."
-              << std::endl;
-    return false; // Must release if carrying eggs
+    std::cout << " -> Creature (" << species << ") is carrying eggs and must be released." << std::endl;
+    return false;
   }
 
-  // --- NSW DPI Saltwater Rules Implementation (Based on provided PDF) ---
-  // (Rules logic remains the same as before)
+  //--- NSW DPI Rules (Inverts) ---
 
-  // Blue Swimmer Crab
+  //Blue Swimmer Crab / Blue Crab
   if (iequals(species, "Blue Swimmer Crab") || iequals(species, "Blue Crab")) {
-    // Egg check already performed above
     if (size >= 6.5) {
-      std::cout << " -> Blue Swimmer Crab meets minimum size (>= 6.5cm) and "
-                   "has no eggs."
-                << std::endl;
-      return true;
+      return true; //size ok, eggs checked above
     } else {
-      std::cout << " -> Blue Swimmer Crab is undersized (< 6.5cm)."
-                << std::endl;
+      std::cout << " -> Blue Swimmer Crab is undersized (< 6.5cm)." << std::endl;
       return false;
     }
   }
-  // Mud Crab
+  //Mud Crab
   else if (iequals(species, "Mud Crab")) {
-    // Egg check already performed above
     if (size >= 8.5) {
-      std::cout << " -> Mud Crab meets minimum size (>= 8.5cm) and has no eggs."
-                << std::endl;
-      return true;
+      return true; //size ok, eggs checked above
     } else {
       std::cout << " -> Mud Crab is undersized (< 8.5cm)." << std::endl;
       return false;
     }
   }
-  // Spanner Crab
+  //Spanner Crab
   else if (iequals(species, "Spanner Crab")) {
-    // Egg check already performed above
     if (size >= 9.3) {
-      std::cout
-          << " -> Spanner Crab meets minimum size (>= 9.3cm) and has no eggs."
-          << std::endl;
-      return true;
+      return true; //size ok, eggs checked above
     } else {
       std::cout << " -> Spanner Crab is undersized (< 9.3cm)." << std::endl;
       return false;
     }
   }
-  // Eastern Rock Lobster
-  else if (iequals(species, "Eastern Rock Lobster") ||
-           iequals(
-               species,
-               "Rock Lobster")) { // Assuming Rock Lobster defaults to Eastern
-    // Egg check already performed above
+  //Eastern Rock Lobster (assume "Rock Lobster" means this one)
+  else if (iequals(species, "Eastern Rock Lobster") || iequals(species, "Rock Lobster")) {
     if (size >= 10.4 && size <= 18.0) {
-      std::cout << " -> Eastern Rock Lobster is within size limits "
-                   "(10.4cm-18cm) and has no eggs."
-                << std::endl;
-      return true;
+      return true; //in slot limit, eggs checked above
     } else if (size < 10.4) {
-      std::cout << " -> Eastern Rock Lobster is undersized (< 10.4cm)."
-                << std::endl;
+      std::cout << " -> Eastern Rock Lobster is undersized (< 10.4cm)." << std::endl;
       return false;
-    } else { // size > 18.0
-      std::cout << " -> Eastern Rock Lobster is oversized (> 18.0cm)."
-                << std::endl;
+    } else { //size > 18.0
+      std::cout << " -> Eastern Rock Lobster is oversized (> 18.0cm)." << std::endl;
       return false;
     }
   }
-  // Southern Rock Lobster - Requires knowing gender, which we don't have.
-  // Simplification: Apply average/stricter rule? Or prompt user?
-  // Applying the female minimum size as a general rule.
+  //Southern Rock Lobster
   else if (iequals(species, "Southern Rock Lobster")) {
-    // Egg check already performed above
-    if (size >= 10.5) { // Using female minimum as the general minimum here
-      std::cout << " -> Southern Rock Lobster meets minimum size (>= 10.5cm) "
-                   "and has no eggs."
-                << std::endl;
-      return true;
+    //Sth Rock Lobster - needs gender? PDF unclear. Applying female min size (10.5cm) for all.
+    if (size >= 10.5) {
+      return true; //size ok, eggs checked above
     } else {
-      std::cout << " -> Southern Rock Lobster is undersized (< 10.5cm)."
-                << std::endl;
+      std::cout << " -> Southern Rock Lobster is undersized (< 10.5cm)." << std::endl;
       return false;
     }
   }
-  // Balmain Bug
+  //Balmain Bug
   else if (iequals(species, "Balmain Bug")) {
-    // Egg check already performed above
     if (size >= 10.0) {
-      std::cout
-          << " -> Balmain Bug meets minimum size (>= 10cm) and has no eggs."
-          << std::endl;
-      return true;
+      return true; //size ok, eggs checked above
     } else {
       std::cout << " -> Balmain Bug is undersized (< 10cm)." << std::endl;
       return false;
     }
   }
-  // Squid & Cuttlefish (No size limit mentioned)
-  else if (iequals(species, "Squid") || iequals(species, "Calamari") ||
-           iequals(species, "Cuttlefish")) {
-    std::cout
-        << " -> Squid/Cuttlefish have no size limit specified. Assuming OK."
-        << std::endl;
+  //Squid/Cuttlefish - no size limit
+  else if (iequals(species, "Squid") || iequals(species, "Calamari") || iequals(species, "Cuttlefish")) {
     return true;
   }
-  // Octopus (No size limit mentioned)
+  //Octopus - no size limit
   else if (iequals(species, "Octopus")) {
-    // NOTE: Location restrictions (rock platforms) are not handled by this
-    // logic!
-    std::cout << " -> Octopus has no size limit specified. Assuming OK "
-                 "(location rules not checked)."
-              << std::endl;
+    //NOTE: location rules (rock platforms) NOT checked here!
     return true;
   }
 
-  // ADD MORE 'ELSE IF' BLOCKS HERE FOR OTHER INVERTEBRATES (Abalone, Bugs,
-  // other Crabs, Prawns, etc.)
 
-  // Default case for species not explicitly listed above
+  //unknown species
   else {
-    std::cout
-        << " -> Species not found in specific rules. Defaulting to RELEASE."
-        << std::endl;
-    return false; // Safer default
+    std::cout << " -> Species '" << species << "' not found in invertebrate rules. Defaulting to RELEASE." << std::endl;
+    return false;
   }
 }

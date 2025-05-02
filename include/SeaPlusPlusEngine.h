@@ -1,47 +1,42 @@
 #ifndef SEAPLUSPLUSENGINE_H
 #define SEAPLUSPLUSENGINE_H
 
-#include <memory> // For std::unique_ptr / std::shared_ptr
+#include <memory> //unique_ptr
 
-// Forward declarations to minimize header dependencies
+//fwd declarations
 class VertebrateChecker;
 class InvertebrateChecker;
-class App; // If needed for back-reference/notifications
 struct SeaCreatureData;
+class App; //optional ref back to App
 
+//mediator class - coordinates between App and Checkers
 class SeaPlusPlusEngine {
 private:
-    // Using unique_ptr assuming the Engine owns the checkers
-    std::unique_ptr<VertebrateChecker> vertebrateChecker;
-    std::unique_ptr<InvertebrateChecker> invertebrateChecker;
-    App* app; // Raw pointer for non-owning back-reference to App (optional)
+  //engine owns checkers via unique_ptr
+  std::unique_ptr<VertebrateChecker> vertebrateChecker;
+  std::unique_ptr<InvertebrateChecker> invertebrateChecker;
+  App* app; //raw ptr back to App (doesn't own), maybe unused?
 
 public:
-    // Constructor might take ownership of checkers
-    SeaPlusPlusEngine(
-        std::unique_ptr<VertebrateChecker> vChecker,
-        std::unique_ptr<InvertebrateChecker> iChecker);
+  //ctor - takes ownership of checkers
+  SeaPlusPlusEngine(
+      std::unique_ptr<VertebrateChecker> vChecker,
+      std::unique_ptr<InvertebrateChecker> iChecker);
 
-    // Destructor needs to be defined if using unique_ptr with forward declared types
-    ~SeaPlusPlusEngine();
+  //dtor (needed for unique_ptr fwd decl)
+  ~SeaPlusPlusEngine();
 
-    // Copy/Move semantics (rule of 5 if needed, or disable)
-    SeaPlusPlusEngine(const SeaPlusPlusEngine&) = delete;
-    SeaPlusPlusEngine& operator=(const SeaPlusPlusEngine&) = delete;
-    SeaPlusPlusEngine(SeaPlusPlusEngine&&) = default; // May need custom definition
-    SeaPlusPlusEngine& operator=(SeaPlusPlusEngine&&) = default; // May need custom definition
+  //no copy, default move (check needed?)
+  SeaPlusPlusEngine(const SeaPlusPlusEngine&) = delete;
+  SeaPlusPlusEngine& operator=(const SeaPlusPlusEngine&) = delete;
+  SeaPlusPlusEngine(SeaPlusPlusEngine&&) = default; //todo: check default move
+  SeaPlusPlusEngine& operator=(SeaPlusPlusEngine&&) = default; //todo: check default move
 
+  //main mediator func - process catch data
+  bool processCatch(const SeaCreatureData& creatureData);
 
-    // Process the catch details (mediator logic)
-    bool processCatch(const SeaCreatureData& creatureData);
-
-    // Optional: Method to register the App (if notifications are needed)
-    void registerApp(App* appInstance);
-
-    // Method to explicitly register checkers (alternative to constructor injection)
-    // void registerCheckers(std::unique_ptr<VertebrateChecker> vChecker,
-    //                      std::unique_ptr<InvertebrateChecker> iChecker);
-
+  //optional App registration (unused?)
+  void registerApp(App* appInstance);
 };
 
-#endif // SEAPLUSPLUSENGINE_H
+#endif

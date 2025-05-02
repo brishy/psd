@@ -2,23 +2,22 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build Tests", // Label for building the test executable
+            "label": "Build Tests", 
             "type": "shell",
-            "command": "make", // Command to build run_tests (assuming default target builds tests or all)
-            // Or explicitly: "command": "make run_tests",
+            "command": "make", 
             "group": {
                 "kind": "build",
-                "isDefault": true // Make this the default build task (Ctrl+Shift+B)
+                "isDefault": true
             },
             "problemMatcher": ["$gcc"],
             "detail": "Builds the test executable using Makefile"
         },
         {
-            "label": "Run Tests", // Label for running the tests
+            "label": "Run Tests", 
             "type": "shell",
-            "command": "make test", // Command defined in your Makefile
+            "command": "make test", 
             "group": "test",
-            "dependsOn": ["Build Tests"], // Ensure tests are built before running
+            "dependsOn": ["Build Tests"], 
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -27,11 +26,11 @@
                 "showReuseMessage": false,
                 "clear": false
             },
-            "problemMatcher": [], // Usually no problems to match for test runs
+            "problemMatcher": [], 
             "detail": "Runs the test suite using 'make test'"
         },
          {
-            "label": "Build App", // Label for building the main executable
+            "label": "Build App", 
             "type": "shell",
             "command": "make main",
             "group": "build",
@@ -39,23 +38,23 @@
             "detail": "Builds the main application executable using 'make main'"
         },
         {
-            "label": "Run App", // Label for running the main application
+            "label": "Run App", 
             "type": "shell",
-            "command": "./main", // Command to run the executable
-            "dependsOn": ["Build App"], // Ensure app is built first
+            "command": "./main", 
+            "dependsOn": ["Build App"], 
              "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": true, // Focus the terminal when running
-                "panel": "dedicated", // Give it its own terminal panel
+                "focus": true, 
+                "panel": "dedicated", 
                 "showReuseMessage": false,
-                "clear": true // Clear terminal before running
+                "clear": true 
             },
             "problemMatcher": [],
             "detail": "Runs the main application './main'"
         },
         {
-            "label": "Clean", // Label for cleaning build artifacts
+            "label": "Clean", 
             "type": "shell",
             "command": "make clean",
             "group": "build",

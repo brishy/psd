@@ -2,21 +2,23 @@
 #define INVERTEBRATECREATURE_H
 
 #include "SeaCreature.h"
-#include "SeaCreatureData.h" // Needed for constructor parameter
+#include "SeaCreatureData.h" //for ctor
+
 #include <string>
 
+//represents an invertebrate catch
 class InvertebrateCreature : public SeaCreature {
 public:
-  // Constructor using SeaCreatureData
-  explicit InvertebrateCreature(const SeaCreatureData &details)
+  //ctor from data struct
+  explicit InvertebrateCreature(const SeaCreatureData& details) //explicit to prevent implicit conversion
       : SeaCreature(details.species, details.size, details.hasEggs) {}
 
-  // Constructor using individual parameters
-  InvertebrateCreature(const std::string &spec, float sz, bool eggs)
+  //ctor from params
+  InvertebrateCreature(const std::string& spec, float sz, bool eggs)
       : SeaCreature(spec, sz, eggs) {}
 
-  // Override the pure virtual function from the base class
+  //impl base class category method
   std::string getCategory() const override { return "Invertebrate"; }
 };
 
-#endif // INVERTEBRATECREATURE_H
+#endif 

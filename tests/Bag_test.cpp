@@ -1,111 +1,95 @@
-// tests/Bag_test.cpp
-#include "Bag.h" // Include the header for the class we are testing
-#include "VertebrateCreature.h" // Needed to create a creature for testing
-#include "gtest/gtest.h"        // Include Google Test framework
+#include "Bag.h" //class under test
+#include "InvertebrateCreature.h" //need creature types
+#include "VertebrateCreature.h"   //need creature types
+#include "gtest/gtest.h"          //gtest framework
 
-// --- FIX: Include header for InvertebrateCreature ---
-#include "InvertebrateCreature.h"
-// --- End FIX ---
+#include <algorithm> //std::find_if
+#include <memory>    //std::unique_ptr
+#include <string>
+#include <tuple> 
+#include <vector>
 
-#include <algorithm> // For std::find_if
-#include <memory>    // For std::unique_ptr
-#include <string>    // Include string
-#include <tuple>     // Include tuple for storing expected data
-#include <vector>    // Include vector for storing expected data
-
-// Test fixture (optional, but good practice for setup/teardown)
+//test fixture for Bag tests
 class BagTest : public ::testing::Test {
 protected:
-  Bag myBag; // Each test gets a fresh Bag instance
+  Bag myBag;
 };
 
-// Test case: Check if the bag is initially empty and can add a creature
+//check starts empty, can add
 TEST_F(BagTest, StartsEmptyAndCanAddCreature) {
-  // ASSERT_EQ checks if two values are equal.
-  ASSERT_EQ(myBag.creatureCount(), 0); // Test initial state
+  //check initial count
+  ASSERT_EQ(myBag.creatureCount(), 0u); //use 0u for size_t compare warning
 
-  // Create a sample creature to add (using existing classes)
+  //make a creature
   auto creature = std::make_unique<VertebrateCreature>("Snapper", 35.0, false);
 
-  // --- FIX: Comment out or remove unused variable to silence warning ---
-  // SeaCreature* raw_ptr = creature.get(); // Not currently used
-  // --- End FIX ---
-
-  // Add the creature
+  //add it
   myBag.addCreature(std::move(creature));
+  //check count is 1
+  ASSERT_EQ(myBag.creatureCount(), 1u);
 
-  // Check state after adding
-  ASSERT_EQ(myBag.creatureCount(), 1);
-
-  // Optional: Check if we can retrieve the added creature
-  // ASSERT_EQ(myBag.getAllCreatures().size(), 1);
-  // Need to be careful comparing unique_ptrs directly, compare contained object
-  // if needed ASSERT_EQ(myBag.getAllCreatures()[0]->getSpecies(), "Snapper");
+  //careful comparing unique_ptrs directly
 }
 
-// Test case: Check if clear() removes creatures
+//check clear()
 TEST_F(BagTest, ClearRemovesAllCreatures) {
-  // Arrange: Add some creatures first
-  myBag.addCreature(
-      std::make_unique<VertebrateCreature>("Snapper", 35.0, false));
-  // Now this line should work as InvertebrateCreature is known
-  myBag.addCreature(
-      std::make_unique<InvertebrateCreature>("Lobster", 12.0, false));
-  ASSERT_EQ(myBag.creatureCount(), 2); // Verify setup
+  //arrange: add some stuff
+  myBag.addCreature(std::make_unique<VertebrateCreature>("Snapper", 35.0, false));
+  myBag.addCreature(std::make_unique<InvertebrateCreature>("Lobster", 12.0, false));
+  //check setup
+  ASSERT_EQ(myBag.creatureCount(), 2u);
 
-  // Act: Call the method under test
+  //act: clear
   myBag.clear();
-
-  // Assert: Check if the bag is now empty
-  ASSERT_EQ(myBag.creatureCount(), 0);
-  ASSERT_TRUE(myBag.getAllCreatures().empty()); // Also check vector directly
+  //assert: should be empty
+  ASSERT_EQ(myBag.creatureCount(), 0u);
+  ASSERT_TRUE(myBag.getAllCreatures().empty());
 }
 
-// Add more TEST_F blocks for other Bag functionality later...
-
+//check getAll on empty
 TEST_F(BagTest, GetAllCreaturesOnEmptyBag) {
-  const auto &creatures = myBag.getAllCreatures();
+  const auto& creatures = myBag.getAllCreatures();
   ASSERT_TRUE(creatures.empty());
-  ASSERT_EQ(creatures.size(), 0);
+  ASSERT_EQ(creatures.size(), 0u);
 }
 
+//check adding null doesn't break things
 TEST_F(BagTest, AddNullCreatureDoesNotChangeCount) {
-  ASSERT_EQ(myBag.creatureCount(), 0); // Start empty
+  ASSERT_EQ(myBag.creatureCount(), 0u); //start empty
 
   std::unique_ptr<SeaCreature> null_creature = nullptr;
-  myBag.addCreature(std::move(null_creature)); // Try adding nullptr
+  //add nullptr
+  myBag.addCreature(std::move(null_creature));
 
-  ASSERT_EQ(myBag.creatureCount(), 0);          // Count should remain 0
-  ASSERT_TRUE(myBag.getAllCreatures().empty()); // Bag should still be empty
+  //count still 0
+  ASSERT_EQ(myBag.creatureCount(), 0u);
+  ASSERT_TRUE(myBag.getAllCreatures().empty());
 }
 
-// Define a structure to hold expected details for comparison
+//struct to hold expected creature data for checking getall
 struct ExpectedCreatureDetails {
   std::string species;
   float size;
   bool hasEggs;
   std::string category;
-  bool found = false; // Flag to track if this creature was found in the bag
+  bool found = false; //used to check if we found this one during verification
 };
 
+//check getAll returns multiple creatures correctly
 TEST_F(BagTest, GetAllCreaturesReturnsMultipleCorrectCreatures) {
-  // Arrange: Define details for a variety of creatures to add
-  // Use a vector to store the expected details for easier verification later
+  //arrange: setup expected data
   std::vector<ExpectedCreatureDetails> expected_creatures = {
-      {"Snapper", 35.5f, false, "Vertebrate"},        // [cite: 15]
-      {"Bream", 26.0f, false, "Vertebrate"},          // [cite: 12]
-      {"Dusky Flathead", 40.0f, false, "Vertebrate"}, // [cite: 13]
-      {"Sand Whiting", 28.0f, false, "Vertebrate"},   // [cite: 16]
-      {"Rock Lobster", 11.2f, false,
-       "Invertebrate"}, // [cite: 20] (No eggs for test)
-      {"Mud Crab", 9.0f, false,
-       "Invertebrate"}, // [cite: 19] (No eggs for test)
-      {"Squid", 15.0f, false,
-       "Invertebrate"} // [cite: 20] (Size arbitrary, no limit)
+      {"Snapper", 35.5f, false, "Vertebrate"},
+      {"Bream", 26.0f, false, "Vertebrate"},
+      {"Dusky Flathead", 40.0f, false, "Vertebrate"},
+      {"Sand Whiting", 28.0f, false, "Vertebrate"},
+      {"Rock Lobster", 11.2f, false, "Invertebrate"}, //no eggs for test
+      {"Mud Crab", 9.0f, false, "Invertebrate"},     //no eggs for test
+      {"Squid", 15.0f, false, "Invertebrate"}         //size arbitrary, no limit
   };
 
-  // Add creatures to the bag
-  for (const auto &details : expected_creatures) {
+  //add creatures based on expected data
+  for (const auto& details : expected_creatures) {
     if (details.category == "Vertebrate") {
       myBag.addCreature(std::make_unique<VertebrateCreature>(
           details.species, details.size, details.hasEggs));
@@ -115,43 +99,38 @@ TEST_F(BagTest, GetAllCreaturesReturnsMultipleCorrectCreatures) {
     }
   }
 
-  // Act: Get the creatures from the bag
-  const auto &creatures_in_bag = myBag.getAllCreatures();
+  //act: get all creatures
+  const auto& creatures_in_bag = myBag.getAllCreatures();
 
-  // Assert: Check count first
+  //assert: count matches
   ASSERT_EQ(creatures_in_bag.size(), expected_creatures.size());
 
-  // Assert: Check details of each creature found in the bag
-  for (const auto &creature_ptr : creatures_in_bag) {
-    ASSERT_NE(creature_ptr, nullptr); // Ensure pointer is not null
+  //assert: check details of each creature in bag
+  for (const auto& creature_ptr : creatures_in_bag) {
+    ASSERT_NE(creature_ptr, nullptr); //check ptr valid
 
-    // Find the matching expected creature based on species name
-    // (case-insensitive)
-    auto it =
-        std::find_if(expected_creatures.begin(), expected_creatures.end(),
-                     [&](ExpectedCreatureDetails &expected) {
-                       // Use the iequals helper if you have it accessible here,
-                       // otherwise basic compare For robustness, let's assume
-                       // basic compare first (adjust if needed)
-                       return expected.species == creature_ptr->getSpecies() &&
-                              !expected.found;
-                     });
+    //find matching expected creature (simple string compare for now)
+    auto it = std::find_if(expected_creatures.begin(), expected_creatures.end(),
+                           [&](ExpectedCreatureDetails& expected) {
+                             return expected.species == creature_ptr->getSpecies() && !expected.found;
+                           });
 
-    // Check if a matching expected creature was found
+    //check we found a match
     ASSERT_NE(it, expected_creatures.end())
         << "Unexpected creature found in bag: " << creature_ptr->getSpecies();
 
     if (it != expected_creatures.end()) {
-      // Verify details against the matched expected creature
+      //verify details
       ASSERT_FLOAT_EQ(creature_ptr->getSize(), it->size);
       ASSERT_EQ(creature_ptr->carriesEggs(), it->hasEggs);
       ASSERT_EQ(creature_ptr->getCategory(), it->category);
-      it->found = true; // Mark this expected creature as found
+      //mark as found
+      it->found = true;
     }
   }
 
-  // Final Check: Ensure ALL expected creatures were found
-  for (const auto &expected : expected_creatures) {
+  //final check: ensure all expected were found in the bag
+  for (const auto& expected : expected_creatures) {
     ASSERT_TRUE(expected.found)
         << "Expected creature not found in bag: " << expected.species;
   }
