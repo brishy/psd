@@ -17,9 +17,9 @@ void Extensions() {
     std::cout << "\n* Bag & BagChecker *" << std::endl;
     Angler userAngler("user");
     //add some fish (using make_unique)
-    userAngler.getBag().addCreature(std::make_unique<VertebrateCreature>("Snapper", 35.0f, false)); // Legal
-    userAngler.getBag().addCreature(std::make_unique<VertebrateCreature>("Bream", 30.0f, false));   // Legal
-    userAngler.getBag().addCreature(std::make_unique<VertebrateCreature>("Bream", 20.0f, false));   // Illegal (undersize)
+    userAngler.getBag().addCreature(std::make_unique<VertebrateCreature>("Snapper", 35.0f, false)); //legal
+    userAngler.getBag().addCreature(std::make_unique<VertebrateCreature>("Bream", 30.0f, false));   //legal
+    userAngler.getBag().addCreature(std::make_unique<VertebrateCreature>("Bream", 20.0f, false));   //illegal
     std::cout << " Angler Bag Count: " << userAngler.getBag().creatureCount() << std::endl;
 
     //create checkers needed by BagChecker
